@@ -3844,6 +3844,65 @@ val ag32_ffi_close_code_thm = Q.store_thm("ag32_ffi_close_code_thm",
   \\ rw [word_add_n2w, DISJ_EQ_IMP]
   \\ strip_tac \\ fs []);
 
+(* ag32_ffi_*)
+
+val ag32_ffi__pre_code_def = Define `
+  ag32_ffi__pre_code =
+  [
+    LoadConstant (5w,F,n2w (ffi_code_start_offset − 1));
+    StoreMEMByte (Imm (n2w (THE (ALOOKUP FFI_codes ""))),Reg 5w)
+  ]`
+
+val (ag32_ffi__pre_SPEC,
+     ag32_ffi__pre_decomp_def) = ag32_decompile
+     ag32_ffi__pre_code_def
+
+val ag32_ffi__SPEC =
+  SPEC_COMPOSE_RULE [ag32_ffi__pre_SPEC,
+                     ag32_ffi_return_SPEC]
+
+val ag32_ffi__pre_FUNPOW_Next = let
+  val th = ag32_ffi__SPEC
+  val code_def = ag32_ffi__code_def
+                 |> SIMP_RULE std_ss [ag32_ffi__pre_code_def,
+                                      ag32_ffi_return_code_def,APPEND]
+  val th = FUNPOW_Next_from_SPEC code_def th
+  val ag32_ffi__intro = prove(
+    ``ag32_ffi_return (FST (ag32_ffi__pre_decomp (s,md))) =
+      ag32_ffi_ s``,
+    fs [ag32_ffi__pre_decomp_def,ag32_ffi__def,
+        ag32_ffi_return_def])
+  in REWRITE_RULE [ag32_ffi__intro] th end
+
+val ag32_ffi__code_thm = Q.store_thm("ag32_ffi__code_thm",
+  `(∀k. k < LENGTH ag32_ffi__code ⇒
+      (get_mem_word s.MEM (s.PC + n2w (4 * k)) =
+       Encode (EL k ag32_ffi__code))) ∧
+   byte_aligned s.PC ∧
+   (s.PC = n2w (ffi_code_start_offset + ag32_ffi__entrypoint)) ∧
+   s.R 3w ∉ { s.PC + n2w n | n < 4 * LENGTH ag32_ffi__code}
+   ⇒
+   ∃k. (FUNPOW Next k s = ag32_ffi_ s)`,
+  strip_tac
+  \\ irule ag32_ffi__pre_FUNPOW_Next
+  \\ simp [EVAL ``LENGTH ag32_ffi__code``]
+  \\ fs [theorem "ag32_ffi__pre_decomp_pre_def",
+         ag32_progTheory.mem_unchanged_def, PULL_FORALL,
+         ag32Theory.dfn'LoadConstant_def,
+         ag32Theory.dfn'StoreMEMByte_def,
+         ag32Theory.incPC_def,
+         ag32Theory.ri2word_def,
+         combinTheory.UPDATE_def,
+         EVAL ``THE (ALOOKUP FFI_codes "")``,
+         EVAL ``ffi_code_start_offset``,
+         EVAL ``ag32_ffi__entrypoint``,
+         EVAL ``LENGTH ag32_ffi__code``]
+  \\ qmatch_goalsub_abbrev_tac `COND (n2w n = _) _`
+  \\ qexists_tac `{n2w n; s.R 3w}`
+  \\ rfs [Abbr `n`, DIV_LT_X]
+  \\ rw [word_add_n2w, DISJ_EQ_IMP]
+  \\ strip_tac \\ fs []);
+
 (* mk_jump_ag32 *)
 
 val mk_jump_ag32_code_thm = Q.store_thm("mk_jump_ag32_code_thm",

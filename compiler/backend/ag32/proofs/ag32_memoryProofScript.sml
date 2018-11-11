@@ -1299,7 +1299,8 @@ val init_asm_state_asm_step = Q.store_thm("init_asm_state_asm_step",
       blastLib.BBLAST_TAC>>
       fs[memory_size_def])
     \\ qmatch_goalsub_abbrev_tac`if _ = ll then _ else _`
-    \\ `0x501637w <+ ll` by (
+    (* change this bound as necessary *)
+    \\ `0x511637w <+ ll` by (
       fs[Abbr`ll`,EVAL``code_start_offset num_ffis``,
          ag32_machine_configTheory.ag32_machine_config_def,
          ag32_machine_configTheory.ag32_prog_addresses_def]>>
@@ -1322,7 +1323,7 @@ val init_asm_state_asm_step = Q.store_thm("init_asm_state_asm_step",
   \\ fs[EVAL``code_start_offset num_ffis``]
   \\ ntac 2 strip_tac
   \\ qmatch_goalsub_abbrev_tac` if _ = ll then _ else _`
-  \\ `0x501637w <+ ll` by (
+  \\ `0x511637w <+ ll` by (
     fs[Abbr`ll`,EVAL``code_start_offset num_ffis``,
        ag32_machine_configTheory.ag32_machine_config_def,
        ag32_machine_configTheory.ag32_prog_addresses_def]>>
